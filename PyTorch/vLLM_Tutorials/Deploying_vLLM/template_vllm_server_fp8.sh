@@ -4,8 +4,15 @@ export PT_HPU_LAZY_MODE=1
 unset VLLM_PROMPT_SEQ_BUCKET_MAX
 
 cd vllm-hpu-extension/calibration/
-echo -e 'Calibrate model'
-./calibrate_model.sh -m $MODEL -d /root/scripts/dataset-processed.pkl -o ./measurement -l 100 -t $MEASUREMENT_TP -g "$UNI_GROUPS"
+echo "UNI_GROUPS is: [$UNI_GROUPS]"
+
+if [ -n "$UNI_GROUPS" ] && [ "$UNI_GROUPS" != "None" ]; then
+        echo -e 'Calibrate model with unification'
+        ./calibrate_model.sh -m $MODEL -d /root/scripts/dataset-processed.pkl -o ./measurement -l 100 -t $MEASUREMENT_TP -g "$UNI_GROUPS"
+else
+        echo -e 'Calibrate model without unification'
+        ./calibrate_model.sh -m $MODEL -d /root/scripts/dataset-processed.pkl -o ./measurement -l 100 -t $MEASUREMENT_TP 
+fi
 
 MODEL_BASE=$(echo $MODEL | awk -F '/' '{print $2}')
 MODEL_BASE=${${q}MODEL_BASE,,}
@@ -14,8 +21,9 @@ KV_CACHE_DTYPE=${DTYPE}_${${q}QUANTIZATION}
 
 #@VARS
 
+
 ## Start vLLM FP8 server  
-QUANT_CONFIG=./measurement/${${q}MODEL_BASE}/maxabs_quant_g3.json vllm serve $MODEL \
+QUANT_CONFIG=./measurement/${${q}MODEL_BASE}/maxabs_quant_$gnum.json vllm serve $MODEL \
         --quantization=${${q}QUANTIZATION} \
         --kv_cache_dtype=${${q}KV_CACHE_DTYPE} \
         --tensor-parallel-size=$TENSOR_PARALLEL_SIZE \

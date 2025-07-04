@@ -169,6 +169,11 @@ def vllm_auto_calc(fd):
     fd['VLLM_DECODE_BLOCK_BUCKET_MAX'] = max(
         128, math.ceil((fd['MAX_NUM_SEQS'] * fd['MAX_MODEL_LEN']) / 128))
     fd['VLLM_PROMPT_SEQ_BUCKET_MAX'] = fd['MAX_MODEL_LEN']
+    
+    if hpu_determined == "GAUDI2":
+        fd["gnum"]='g2'
+    elif hpu_determined == "GAUDI3":
+        fd["gnum"]='g3'
 
     # Create our output list
     with open('varlist_output.txt') as ovp_file:

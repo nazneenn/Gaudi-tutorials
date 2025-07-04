@@ -17,7 +17,7 @@ export HF_HOME DTYPE
 if [ "$DTYPE" = "fp8" ]; then
 	INPUT_SH=template_vllm_server_fp8.sh
 else
-	INPUT_SH=template_vllm_server.sh
+	INPUT_SH=template_vllm_server_bf16.sh
 fi
 
 python3 vllm_autocalc.py settings_vllm.csv
