@@ -3,12 +3,7 @@
 export PT_HPU_LAZY_MODE=1
 unset VLLM_PROMPT_SEQ_BUCKET_MAX
 
-# git clone https://github.com/HabanaAI/vllm-hpu-extension.git
-# cd vllm-hpu-extension/
-# git config --global --add safe.directory '*'
-# git checkout v1.21.0
-cd calibration/
-
+cd vllm-hpu-extension/calibration/
 echo -e 'Calibrate model'
 ./calibrate_model.sh -m $MODEL -d /root/scripts/dataset-processed.pkl -o ./measurement -l 100 -t $MEASUREMENT_TP -g "$UNI_GROUPS"
 

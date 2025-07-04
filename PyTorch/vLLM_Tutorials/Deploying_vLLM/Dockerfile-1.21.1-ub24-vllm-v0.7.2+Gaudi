@@ -32,10 +32,17 @@ RUN pip install datasets && \
 # Copy utility scripts and configuration
 RUN mkdir -p /root/scripts
 COPY entrypoint.sh vllm_autocalc.py settings_vllm.csv template_vllm_server.sh \
-     template_vllm_server_fp8.sh varlist* perftest* dataset/* vllm-hpu-extension/ \
+     template_vllm_server_fp8.sh varlist* perftest* dataset/* \
      /root/scripts
 RUN chmod +x /root/scripts/*.sh
+
 WORKDIR /root/scripts
+
+RUN git clone https://github.com/HabanaAI/vllm-hpu-extension.git && \
+    cd vllm-hpu-extension && \
+    git checkout v1.21.0 
+    
+COPY step-5-unify_measurements.py /root/scripts/vllm-hpu-extension/calibration
 
 # Set entrypoint script
 ENTRYPOINT ["/root/scripts/entrypoint.sh"]
