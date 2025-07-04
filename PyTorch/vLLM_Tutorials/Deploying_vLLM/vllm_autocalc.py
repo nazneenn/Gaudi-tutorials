@@ -30,7 +30,6 @@ def vllm_auto_calc(fd):
     fd['MODEL_MEM_FROM_CONFIG'] = float(fd.get('MODEL_MEM_FROM_CONFIG'))
     fd['DTYPE'] = DTYPE
     fd['DEVICE_HPU_MEM'] = hpu_mem[hpu_determined]
-
     print(f"{hpu_determined} Device detected with "
           f"{fd['DEVICE_HPU_MEM']} GB memory.")
 
@@ -134,7 +133,7 @@ def vllm_auto_calc(fd):
                                         0.5)
     fd['KV_CACHE_MEM'] = (fd['USABLE_MEM'] * fd['GPU_MEM_UTILIZATION'] *
                           (1 - fd['VLLM_GRAPH_RESERVED_MEM']))
-
+                          
     if fd.get('MAX_NUM_SEQS') is None:
         fd['MAX_NUM_SEQS'] = (fd['TENSOR_PARALLEL_SIZE'] * fd['KV_CACHE_MEM'] /
                               fd['KV_CACHE_PER_SEQ'])
@@ -154,17 +153,18 @@ def vllm_auto_calc(fd):
                 "Not enough memory for kv cache increase TENSOR_PARALLEL_SIZE "
                 "or reduce MAX_MODEL_LEN or increase bucket step")
 
-        if (fd['MODEL'] in [
+        if fd['MODEL'] in [
                 'meta-llama/Llama-3.2-11B-Vision-Instruct',
                 'meta-llama/Llama-3.2-90B-Vision-Instruct'
-        ] and fd['MAX_NUM_SEQS'] > 128):
-            fd['MAX_NUM_SEQS'] = 128
-            print(f"{fd['MODEL']} currently does not support "
-                  "max-num-seqs > 128. "
-                  "Limiting max-num-seqs to 128")
+        ] and fd['MAX_NUM_SEQS'] > 128:
+                fd['MAX_NUM_SEQS'] = 128
+                print(f"{fd['MODEL']} currently does not support "
+                "max-num-seqs > 128. "
+                "Limiting the max-num-seqs to 128")
         print("Setting MAX_NUM_SEQS", fd['MAX_NUM_SEQS'])
     else:
         fd['MAX_NUM_SEQS'] = max(1, fd['MAX_NUM_SEQS'])
+
 
     fd['VLLM_DECODE_BLOCK_BUCKET_MAX'] = max(
         128, math.ceil((fd['MAX_NUM_SEQS'] * fd['MAX_MODEL_LEN']) / 128))
@@ -191,7 +191,8 @@ def get_model_from_csv(file_path):
     dataframe_csv = pd.read_csv(file_path)
     filtered_row = dataframe_csv.loc[dataframe_csv['MODEL'] ==
                                      os.environ['MODEL']]
-
+    filtered_row = filtered_row.loc[filtered_row['DTYPE'] ==
+                                     os.environ['DTYPE']]
     if filtered_row.empty:
         raise ValueError(
             f"No matching rows found for MODEL '{os.environ['MODEL']}' "
@@ -220,7 +221,7 @@ def overwrite_params(dict_before_updates):
                     dict_before_updates[param] = os.environ[param]
 
                 print(f"Adding or updating {param} "
-                      f"to {dict_before_updates[param]}")
+                        f"to {dict_before_updates[param]}")
 
     return dict_before_updates
 
@@ -237,7 +238,10 @@ def main():
     # CONSTANTS
     hpu_mem = {'GAUDI2': 96, 'GAUDI3': 128}
     # TODO: Remove this hardcoded value in the future
-    DTYPE = "bfloat16"
+    if os.getenv('DTYPE') is None:
+        DTYPE = 'bfloat16'
+    else:
+        DTYPE = os.environ['DTYPE']
 
     # PRECHECKS
     if os.getenv('MODEL') is None:
